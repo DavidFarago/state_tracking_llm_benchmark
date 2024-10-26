@@ -10,7 +10,7 @@ The paper [The Expressive Power of Transformers with Chain of Thought](https://a
 
 ## Results
 
-| Model                      | max correct swaps | comments             |
+| MODEL_NAME                 | max correct swaps | comments             |
 | -------------------------- | ----------------- | -------------------- |
 | gemma2-9b-it               | none              | served at groq       |
 | llama-3.1-70b-versatile    | 2                 | served at groq       |
@@ -19,5 +19,5 @@ The paper [The Expressive Power of Transformers with Chain of Thought](https://a
 | Qwen2.5-72B-Instruct       | 2                 | served at hyperbolic |
 | gpt-4o-mini                | 2                 | served at OpenAI     |
 | gpt-4o                     | 3                 | served at OpenAI     |
-| o1-mini                    | 100               | served at OpenAI     |
-| o1-preview                 | 101               | served at OpenAI     |
+| o1-mini                    | 100               | served at OpenAI, expensive and slow|
+| o1-preview                 | 101               | served at OpenAI, expensive and slow|
