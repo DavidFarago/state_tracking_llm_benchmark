@@ -17,7 +17,7 @@ Besides state tracking resp. CoT, the model must also have sufficient NLU resp. 
 | gemma2-9b-it               | none              | served at groq       |
 | llama-3.1-70b-versatile    | 2                 | served at groq       |
 | llama-3.2-11b-text-preview | 2                 | served at groq       |
-| lfm-40b                    | 0                 | served at lambdalab  |
+| lfm-40b                    | 0                 | Liquid AI's LFM 40.3B MoE served at lambdalab  |
 | Qwen2.5-72B-Instruct       | 2                 | served at hyperbolic |
 | gpt-4o-mini                | 2                 | served at OpenAI     |
 | gpt-4o                     | 3                 | served at OpenAI     |
