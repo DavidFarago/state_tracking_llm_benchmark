@@ -1,10 +1,10 @@
 import random
+import time
 from typing import Tuple, List
 
 from openai import OpenAI 
-import requests
 
-MODEL_NAME = 'Qwen/Qwen2.5-72B-Instruct'
+MODEL_NAME = 'jamba-1.5-large'
 MODEL_SERVER = {
     'o1-mini': 'openai', 
     'o1-preview': 'openai', 
@@ -14,18 +14,21 @@ MODEL_SERVER = {
     'gemma2-9b-it': 'groq', 
     'lfm-40b': 'lambdalab',
     'Qwen/Qwen2.5-72B-Instruct': 'hyperbolic',
+    'jamba-1.5-large': 'ai21',
 }
 BASE_URL = {
     'openai': None, 
     'groq': 'https://api.groq.com/openai/v1', 
     'lambdalab': 'https://api.lambdalabs.com/v1',
-    'hyperbolic': 'https://api.hyperbolic.xyz/v1/chat/completions'
+    'hyperbolic': 'https://api.hyperbolic.xyz/v1/chat/completions',
+    'ai21': None,
     }
 API_KEY = {
     'openai': 'see https://platform.openai.com/settings/profile?tab=api-keys', 
     'groq': 'see https://console.groq.com/keys', 
     'lambdalab':'see https://cloud.lambdalabs.com/api-keys',
     'hyperbolic': 'see https://app.hyperbolic.xyz/settings',
+    'ai21': 'see https://studio.ai21.com/account/api-key',
     }
 SERVER = MODEL_SERVER[MODEL_NAME]
 SERVICE = OpenAI(api_key=API_KEY[SERVER], base_url=BASE_URL[SERVER])
@@ -53,7 +56,10 @@ def llm_output(model_name: str, sys_msg: str = '', user_msg: str = '', temperatu
     if user_msg:
         messages.append({"role": "user", "content": user_msg})
     print(messages)
+
+    start_time = time.perf_counter()
     if SERVER == 'hyperbolic':
+        import requests
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {API_KEY[SERVER]}"
@@ -63,15 +69,35 @@ def llm_output(model_name: str, sys_msg: str = '', user_msg: str = '', temperatu
             "messages": messages,
             "temperature": temperature,
         }
-        response = requests.post(BASE_URL[SERVER], headers=headers, json=data)
-        return response.json()['choices'][0]['message']['content']
-    output = SERVICE.chat.completions.create(
-        model=model_name,
-        messages=messages,
-        temperature=temperature
-    )
-    print(output)
-    return output.choices[0].message.content
+        response = requests.post(BASE_URL[SERVER], headers=headers, json=data).json()
+        result = response['choices'][0]['message']['content']
+    elif SERVER == 'ai21':
+        from ai21 import AI21Client
+        from ai21.models.chat import ResponseFormat, ChatMessage
+        client = AI21Client(api_key=API_KEY[SERVER])
+        proprietary_messages = [ChatMessage(content=m['content'], role=m['role']) for m in messages]
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=proprietary_messages,
+            temperature=temperature,
+            response_format=ResponseFormat(type="text"),
+        )
+        result = response.choices[0].message.content
+    else:
+        response = SERVICE.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature
+        )
+        result = response.choices[0].message.content
+    end_time = time.perf_counter()
+    print(f"Inference time: {end_time - start_time:.6f} seconds")
+    print(f"Completion tokens: {response.usage.completion_tokens}")
+    try:
+        print(f"Reasoning tokens: {response.usage.completion_tokens_details.reasoning_tokens}")
+    except:
+        pass
+    return result
 
 def check(model_name: str, swapList: List[Tuple[int, int]], final_order: List[int]) -> bool:
     prompt = """There are five slots:
@@ -95,5 +121,5 @@ def check(model_name: str, swapList: List[Tuple[int, int]], final_order: List[in
     return final_order == [int(x.strip()) for x in final_line.split(",")]
 
 swapList, swapResultUpTo = generate_permutations()
-length = 99
+length = 98
 print(check(MODEL_NAME, swapList[:length+1], swapResultUpTo[length]))
