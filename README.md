@@ -124,8 +124,6 @@ For o1-preview with CoT for 80 given swaps, there was one time the following ans
 
 ## Conclusion
 
-The theory of [The Illusion of State in State-Space Models](https://arxiv.org/pdf/2404.08819) is not reflected in the benchmark results.
+The theory of [The Illusion of State in State-Space Models](https://arxiv.org/pdf/2404.08819) is not reflected well in the benchmark results. This is due to the high number of error causes besides state tracking: Lost In The Middle causes swaps to be left out, weak instruction following causes slots and balls to be mixed up. Trying to forbid these kind of mistakes through prompts has little effect.
 
-The theory of [The Expressive Power of Transformers with Chain of Thought](https://arxiv.org/pdf/2310.07923) is reflected in the internal CoT of the o1 models, but not in explicit CoTs.
-
-Consequently, explicit CoT makes o1 perform worse, and less deterministic.
+The theory of [The Expressive Power of Transformers with Chain of Thought](https://arxiv.org/pdf/2310.07923) is reflected in the internal CoT of the o1 models, but not in explicit CoTs. Consequently, explicit CoT makes o1 perform worse, and less deterministic/robust.
