@@ -4,11 +4,14 @@ from typing import Tuple, List
 
 from openai import OpenAI 
 
-MODEL_NAME = 'jamba-1.5-large'
+COT_INTENSITY = 1 # 0: no CoT, 1: standard CoT
+FORBID_COMMON_ERRORS = False # this addition to the prompt seldomly improves the performance of the models
+MODEL_NAME = 'lfm-40b'
 MODEL_SERVER = {
     'o1-mini': 'openai', 
     'o1-preview': 'openai', 
     'gpt-4o': 'openai',
+    'gpt-4o-mini': 'openai',
     'llama-3.1-70b-versatile': 'groq', 
     'llama-3.2-11b-text-preview': 'groq', 
     'gemma2-9b-it': 'groq', 
@@ -26,7 +29,7 @@ BASE_URL = {
 API_KEY = {
     'openai': 'see https://platform.openai.com/settings/profile?tab=api-keys', 
     'groq': 'see https://console.groq.com/keys', 
-    'lambdalab':'see https://cloud.lambdalabs.com/api-keys',
+    'lambdalab': 'see https://cloud.lambdalabs.com/api-keys',
     'hyperbolic': 'see https://app.hyperbolic.xyz/settings',
     'ai21': 'see https://studio.ai21.com/account/api-key',
     }
@@ -92,8 +95,8 @@ def llm_output(model_name: str, sys_msg: str = '', user_msg: str = '', temperatu
         result = response.choices[0].message.content
     end_time = time.perf_counter()
     print(f"Inference time: {end_time - start_time:.6f} seconds")
-    print(f"Completion tokens: {response.usage.completion_tokens}")
     try:
+        print(f"Completion tokens: {response.usage.completion_tokens}")
         print(f"Reasoning tokens: {response.usage.completion_tokens_details.reasoning_tokens}")
     except:
         pass
@@ -109,17 +112,22 @@ def check(model_name: str, swapList: List[Tuple[int, int]], final_order: List[in
 
 """ 
     swap_instruction = ", ".join([f"swap ball {a} and ball {b}".format(a, b) for a, b in swapList])
-    question = "Which ball is in which slot after all the swaps? Do not output anything but the final order of the balls, in the format <ball number in slot 1>, ..., <ball number in slot 5>, e.g. '1, 2, 3, 4, 5' if the balls happen to be in order."
+    questions = [
+        "Which ball is in which slot after all the swaps? Do not output anything but the final order of the balls, in the format <ball number in slot 1>, ..., <ball number in slot 5>, e.g. '1, 2, 3, 4, 5' if the balls happen to be in order.", 
+        "Which ball is in which slot after all the swaps? Output the order after each swap in the format <ball number in slot 1>, ..., <ball number in slot 5>, e.g. '1, 2, 3, 4, 5' if the balls happen to be in order.",
+    ]
+    question = questions[COT_INTENSITY]
+    if FORBID_COMMON_ERRORS:
+        question += " Never miss any given swap. Never mix up balls and slots."
 
     if MODEL_NAME[:2] == 'o1':
         output = llm_output(model_name, user_msg = f'{prompt}Now {swap_instruction}. {question}', temperature = 1.0)
     else:
         output = llm_output(model_name, sys_msg=prompt + question, user_msg= f'Swaps: {swap_instruction}')
-    final_line = output.splitlines()[-1]
-    print(final_line)
+    print(output if COT_INTENSITY > 0 else output.splitlines()[-1])
     print(final_order)
-    return final_order == [int(x.strip()) for x in final_line.split(",")]
+    return final_order == [int(x.strip()) for x in output.splitlines()[-1].split(",")]
 
 swapList, swapResultUpTo = generate_permutations()
-length = 98
+length = 73
 print(check(MODEL_NAME, swapList[:length+1], swapResultUpTo[length]))
